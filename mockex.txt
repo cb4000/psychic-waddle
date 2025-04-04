@@ -1,0 +1,346 @@
+# Universal API Mocking System
+
+I'll refactor the approach to create a universal mocking system that can handle any API without hardcoding functions and support easy sharing between users.
+
+## 1. Bring Your Own Mock Data (Shareable Format)
+
+### Universal Request-Response Mapping
+
+```json
+{
+  "mock_collection": {
+    "name": "Stock Trading API Mocks",
+    "version": "1.0.0",
+    "author": "jane.trader@example.com",
+    "apis": {
+      "get_price": [
+        {
+          "request_pattern": {
+            "symbol": "AAPL",
+            "*": "*"  // Wildcard to match any other fields
+          },
+          "response": {
+            "price": 175.50,
+            "volume": 1250000
+          }
+        },
+        {
+          "request_pattern": {
+            "symbol": "MSFT"
+          },
+          "response": {
+            "price": 280.75,
+            "volume": 980000
+          }
+        }
+      ],
+      "execute_trade": [
+        {
+          "request_pattern": {
+            "symbol": "*",  // Any symbol
+            "side": "BUY",
+            "quantity": {"$range": [1, 100]}  // Range matcher
+          },
+          "response": {
+            "order_id": "ord_${random_id}",  // Template variables
+            "status": "FILLED",
+            "fill_price": "${request.limit_price * 0.995}"  // Reference to request
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+### Importable Mock Collections
+
+```json
+{
+  "imports": [
+    {
+      "url": "https://mocklib.example.com/collections/crypto_price_api.json",
+      "apis": ["get_crypto_price", "get_market_depth"]
+    },
+    {
+      "local_path": "./forex_api_mocks.json",
+      "apis": ["convert_currency"]
+    }
+  ],
+  "apis": {
+    "custom_api": [
+      {
+        "request_pattern": {"param": "value"},
+        "response": {"result": "custom"}
+      }
+    ]
+  }
+}
+```
+
+## 2. Bring Your Own Mock Logic (Non-DSL Approaches)
+
+### 1. JSON Conditional Logic
+
+```json
+{
+  "mock_logic": {
+    "name": "Trading API Logic",
+    "version": "1.2.0",
+    "author": "john.algo@example.com",
+    "apis": {
+      "get_price": {
+        "conditions": [
+          {
+            "if": {"$.symbol": "AAPL"},
+            "then": {
+              "price": {"$eval": "175.0 + (Math.random()*2 - 1)"},
+              "volume": {"$eval": "1000000 + Math.floor(Math.random() * 500000)"}
+            }
+          },
+          {
+            "if": {"$.timestamp": {"$after": "2023-05-01T00:00:00Z"}},
+            "then": {
+              "price_premium": {"$eval": "5.0"},
+              "apply_to": ["price"]
+            }
+          },
+          {
+            "if": {"$default": true},
+            "then": {
+              "error": "Symbol not supported",
+              "code": 404
+            }
+          }
+        ],
+        "combine_results": "merge"  // or "first_match", "all_matches"
+      }
+    }
+  }
+}
+```
+
+### 2. JSONLogic Standard
+
+Using existing [JSONLogic](https://jsonlogic.com/) standard:
+
+```json
+{
+  "mock_logic": {
+    "name": "Order Execution Mock",
+    "apis": {
+      "execute_trade": {
+        "response_generator": {
+          "status": {
+            "if": [
+              {"<": [{"var": "request.quantity"}, 100]},
+              "FILLED",
+              {"if": [
+                {"<": [{"var": "request.quantity"}, 1000]},
+                {"?:": [
+                  {"<": [{"random": []}, 0.8]},
+                  "FILLED",
+                  "PARTIALLY_FILLED"
+                ]},
+                "REJECTED"
+              ]}
+            ]
+          },
+          "fill_price": {
+            "*": [
+              {"var": "request.limit_price"},
+              {"+": [
+                0.995,
+                {"*": [0.01, {"random": []}]}
+              ]}
+            ]
+          },
+          "order_id": {"cat": ["ord_", {"substr": [{"uuid": []}, 0, 8]}]}
+        }
+      }
+    }
+  }
+}
+```
+
+### 3. JavaScript Expression Objects
+
+```json
+{
+  "mock_config": {
+    "apis": {
+      "get_market_data": {
+        "handler": {
+          "language": "javascript",
+          "code": "function(request, context) {\n  const basePrice = 100;\n  const symbol = request.symbol;\n  const date = new Date(request.date || Date.now());\n  \n  // Access to mock state for persistent mocking\n  const prevPrice = context.getState(`${symbol}_lastPrice`) || basePrice;\n  const movement = (Math.random() - 0.5) * 2.0;\n  const newPrice = prevPrice * (1 + movement * 0.01);\n  \n  // Store for next call\n  context.setState(`${symbol}_lastPrice`, newPrice);\n  \n  // Calculate volume based on price movement\n  const volume = 100000 + Math.abs(movement) * 200000;\n  \n  return {\n    price: newPrice.toFixed(2),\n    date: date.toISOString(),\n    volume: Math.floor(volume),\n    change: ((newPrice - prevPrice) / prevPrice * 100).toFixed(2) + '%'\n  };\n}"
+        },
+        "state": {
+          "persistent": true,
+          "initial": {
+            "AAPL_lastPrice": 175.0,
+            "MSFT_lastPrice": 280.75
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### 4. Function Templates with Variables
+
+```json
+{
+  "mock_templates": {
+    "apis": {
+      "execute_trade": {
+        "template_variables": {
+          "success_rate": 0.8,
+          "min_slippage": -0.002,
+          "max_slippage": 0.001,
+          "latency_ms": {"min": 50, "max": 200}
+        },
+        "response_template": {
+          "status": "{{random_weighted({'FILLED': success_rate, 'PARTIALLY_FILLED': (1-success_rate)*0.8, 'REJECTED': (1-success_rate)*0.2})}}",
+          "order_id": "ord_{{random_id(12)}}",
+          "fill_price": "{{request.limit_price * (1 + random_float(min_slippage, max_slippage))}}",
+          "latency": "{{random_int(latency_ms.min, latency_ms.max)}}",
+          "timestamp": "{{now()}}"
+        },
+        "conditional_modifiers": [
+          {
+            "condition": "request.quantity > 1000",
+            "modify": {
+              "success_rate": "{{success_rate * 0.7}}",
+              "max_slippage": "{{max_slippage * 2}}"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+### 5. Simple DSL Option
+
+```
+DEFINE API "get_price" {
+  STATE {
+    prices: {
+      "AAPL": 175.0,
+      "MSFT": 280.75,
+      "GOOGL": 135.40
+    },
+    volatility: 0.01
+  }
+  
+  WHEN request.symbol IN prices.keys {
+    LET base_price = prices[request.symbol]
+    LET movement = random(-1.0, 1.0) * volatility
+    LET new_price = base_price * (1 + movement)
+    
+    // Update state for next request
+    SET prices[request.symbol] = new_price
+    
+    RETURN {
+      price: new_price,
+      change_percent: movement * 100,
+      volume: 1000000 * (1 + random(0, 0.5))
+    }
+  }
+  
+  OTHERWISE {
+    RETURN {
+      error: "Unknown symbol: " + request.symbol,
+      code: 404
+    }
+  }
+}
+```
+
+## Sharing & Compatibility Layer
+
+### Mock Registry Format
+
+```json
+{
+  "registry": {
+    "name": "Community API Mocks",
+    "version": "2.0",
+    "collections": [
+      {
+        "id": "stock-trading-basic",
+        "name": "Stock Trading API - Basic",
+        "description": "Basic mocks for common stock trading operations",
+        "author": "trading_team",
+        "apis": ["get_price", "execute_trade", "get_account"],
+        "url": "https://mock-registry.example.com/collections/stock-trading-basic.json",
+        "downloads": 1240,
+        "rating": 4.7,
+        "tags": ["finance", "trading", "stocks"]
+      },
+      {
+        "id": "crypto-exchange",
+        "name": "Cryptocurrency Exchange API",
+        "description": "Complete mocks for crypto exchange operations",
+        "author": "crypto_devs",
+        "apis": ["get_crypto_price", "place_crypto_order", "get_wallet"],
+        "url": "https://mock-registry.example.com/collections/crypto-exchange.json",
+        "downloads": 890,
+        "rating": 4.2,
+        "tags": ["crypto", "blockchain", "exchange"]
+      }
+    ]
+  }
+}
+```
+
+### Universal Mock Metadata 
+
+```json
+{
+  "metadata": {
+    "api_name": "financial_data_api",
+    "version": "1.3.0",
+    "documentation_url": "https://api.example.com/docs",
+    "endpoints": [
+      {
+        "name": "get_price",
+        "path": "/v1/prices/{symbol}",
+        "method": "GET",
+        "request_params": [
+          {"name": "symbol", "type": "string", "required": true},
+          {"name": "timestamp", "type": "datetime", "required": false}
+        ],
+        "response_structure": {
+          "price": "number",
+          "volume": "number",
+          "timestamp": "datetime"
+        }
+      }
+    ]
+  }
+}
+```
+
+## Implementation Considerations
+
+1. **Engine architecture:**
+   - Universal request matcher that handles patterns, wildcards, ranges
+   - Expression evaluator for different logic formats
+   - State management for stateful mock behaviors
+   - Plugin system for custom logic evaluators
+
+2. **Compatibility:**
+   - Mock format converters for importing from different systems
+   - Version control for mock collections
+   - API contract validation to ensure mocks match actual API specs
+
+3. **Sharing ecosystem:**
+   - Registry for publishing and discovering mock collections
+   - Versioning and tagging system
+   - Rating and review system for community-contributed mocks
+   - Simple import/export commands
+
+This approach allows users to share mocks for any API without requiring engine changes, using standard formats that can express complex behaviors without custom DSLs in most cases.
