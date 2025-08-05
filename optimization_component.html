@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f8fafc;
@@ -18,17 +18,56 @@
             background: white;
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            padding: 32px;
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            background: linear-gradient(135deg, #1f2937, #374151);
+            color: white;
+            padding: 24px 32px;
+            text-align: center;
         }
         
         .panel-title {
             font-size: 24px;
             font-weight: 700;
-            margin-bottom: 24px;
-            color: #1f2937;
-            text-align: center;
+            margin: 0;
         }
         
+        .tab-navigation {
+            display: flex;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 16px 24px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab-button.active {
+            color: #3b82f6;
+            background: white;
+            border-bottom-color: #3b82f6;
+        }
+        
+        .tab-button:hover {
+            background: #f3f4f6;
+        }
+        
+        .tab-content {
+            padding: 32px;
+        }
+        
+        /* Create New Run Styles */
         .variables-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -183,72 +222,435 @@
             font-weight: normal;
             margin-left: 8px;
         }
+        
+        /* History View Styles */
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .history-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+        
+        .history-stats {
+            display: flex;
+            gap: 24px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .runs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .run-item {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.2s;
+        }
+        
+        .run-item:hover {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .run-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .run-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+        
+        .run-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-completed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-running {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-failed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .run-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+        
+        .detail-label {
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        .detail-value {
+            color: #1f2937;
+            font-weight: 600;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+        
+        .run-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .action-button {
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid;
+        }
+        
+        .action-view {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border-color: #93c5fd;
+        }
+        
+        .action-download {
+            background: #f0fdf4;
+            color: #166534;
+            border-color: #bbf7d0;
+        }
+        
+        .action-delete {
+            background: #fef2f2;
+            color: #dc2626;
+            border-color: #fecaca;
+        }
+        
+        .action-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tab-content.hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="optimization-panel">
-        <h1 class="panel-title">Portfolio Optimization</h1>
+        <div class="panel-header">
+            <h1 class="panel-title">Portfolio Optimization</h1>
+        </div>
         
-        <div class="variables-container">
-            <div class="variable-section optimization-variables">
-                <h3>Optimization Variables <span class="variable-count">(4 parameters)</span></h3>
-                <div class="variable-item">
-                    <span class="variable-name">Portfolio Allocation</span>
-                    <span class="variable-value">60/40</span>
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="create">Create New Run</button>
+            <button class="tab-button" data-tab="history">View History</button>
+        </div>
+        
+        <!-- Create New Run Tab -->
+        <div id="create-tab" class="tab-content">
+            <div class="variables-container">
+                <div class="variable-section optimization-variables">
+                    <h3>Optimization Variables <span class="variable-count">(4 parameters)</span></h3>
+                    <div class="variable-item">
+                        <span class="variable-name">Portfolio Allocation</span>
+                        <span class="variable-value">60/40</span>
+                    </div>
+                    <div class="variable-item">
+                        <span class="variable-name">Risk Tolerance</span>
+                        <span class="variable-value">0.15</span>
+                    </div>
+                    <div class="variable-item">
+                        <span class="variable-name">Rebalancing Frequency</span>
+                        <span class="variable-value">Quarterly</span>
+                    </div>
+                    <div class="variable-item">
+                        <span class="variable-name">Cash Reserve</span>
+                        <span class="variable-value">5.2%</span>
+                    </div>
                 </div>
-                <div class="variable-item">
-                    <span class="variable-name">Risk Tolerance</span>
-                    <span class="variable-value">0.15</span>
-                </div>
-                <div class="variable-item">
-                    <span class="variable-name">Rebalancing Frequency</span>
-                    <span class="variable-value">Quarterly</span>
-                </div>
-                <div class="variable-item">
-                    <span class="variable-name">Cash Reserve</span>
-                    <span class="variable-value">5.2%</span>
+
+                <div class="variable-section other-variables">
+                    <h3>Market Variables <span class="variable-count">(5 constraints)</span></h3>
+                    <div class="variable-item">
+                        <span class="variable-name">Market Volatility</span>
+                        <span class="variable-value">0.18</span>
+                    </div>
+                    <div class="variable-item">
+                        <span class="variable-name">Interest Rate</span>
+                        <span class="variable-value">4.25%</span>
+                    </div>
+                    <div class="variable-item">
+                        <span class="variable-name">Inflation Rate</span>
+                        <span class="variable-value">2.8%</span>
+                    </div>
+                    <div class="variable-item">
+                        <span class="variable-name">Transaction Costs</span>
+                        <span class="variable-value">0.05%</span>
+                    </div>
+                    <div class="variable-item">
+                        <span class="variable-name">Tax Rate</span>
+                        <span class="variable-value">22%</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="variable-section other-variables">
-                <h3>Market Variables <span class="variable-count">(5 constraints)</span></h3>
-                <div class="variable-item">
-                    <span class="variable-name">Market Volatility</span>
-                    <span class="variable-value">0.18</span>
+            <div class="controls-section">
+                <h3 class="controls-title">Optimization Parameters</h3>
+                <div class="date-inputs">
+                    <div class="date-group">
+                        <label for="start-date">Start Date</label>
+                        <input type="date" id="start-date" value="2024-01-01">
+                    </div>
+                    <div class="date-group">
+                        <label for="end-date">End Date</label>
+                        <input type="date" id="end-date" value="2024-12-31">
+                    </div>
                 </div>
-                <div class="variable-item">
-                    <span class="variable-name">Interest Rate</span>
-                    <span class="variable-value">4.25%</span>
-                </div>
-                <div class="variable-item">
-                    <span class="variable-name">Inflation Rate</span>
-                    <span class="variable-value">2.8%</span>
-                </div>
-                <div class="variable-item">
-                    <span class="variable-name">Transaction Costs</span>
-                    <span class="variable-value">0.05%</span>
-                </div>
-                <div class="variable-item">
-                    <span class="variable-name">Tax Rate</span>
-                    <span class="variable-value">22%</span>
-                </div>
+                <button class="optimize-button">Run Optimization</button>
             </div>
         </div>
-
-        <div class="controls-section">
-            <h3 class="controls-title">Optimization Parameters</h3>
-            <div class="date-inputs">
-                <div class="date-group">
-                    <label for="start-date">Start Date</label>
-                    <input type="date" id="start-date" value="2024-01-01">
-                </div>
-                <div class="date-group">
-                    <label for="end-date">End Date</label>
-                    <input type="date" id="end-date" value="2024-12-31">
+        
+        <!-- History Tab -->
+        <div id="history-tab" class="tab-content hidden">
+            <div class="history-header">
+                <h2 class="history-title">Optimization History</h2>
+                <div class="history-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">12</span>
+                        <span>Total Runs</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">10</span>
+                        <span>Completed</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">1</span>
+                        <span>Running</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">1</span>
+                        <span>Failed</span>
+                    </div>
                 </div>
             </div>
-            <button class="optimize-button">Run Optimization</button>
+            
+            <div class="runs-list">
+                <div class="run-item">
+                    <div class="run-header">
+                        <h3 class="run-title">Q4 2024 Portfolio Optimization</h3>
+                        <span class="run-status status-running">Running</span>
+                    </div>
+                    <div class="run-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Date Range:</span>
+                            <span class="detail-value">2024-01-01 to 2024-12-31</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Duration:</span>
+                            <span class="detail-value">2m 34s</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Started:</span>
+                            <span class="detail-value">Today, 2:15 PM</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Progress:</span>
+                            <span class="detail-value">67%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="run-item">
+                    <div class="run-header">
+                        <h3 class="run-title">Conservative Risk Profile Test</h3>
+                        <span class="run-status status-completed">Completed</span>
+                    </div>
+                    <div class="run-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Date Range:</span>
+                            <span class="detail-value">2024-07-01 to 2024-12-31</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Duration:</span>
+                            <span class="detail-value">4m 12s</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Completed:</span>
+                            <span class="detail-value">Yesterday, 4:32 PM</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Return:</span>
+                            <span class="detail-value">+12.4%</span>
+                        </div>
+                    </div>
+                    <div class="run-actions">
+                        <button class="action-button action-view">View Results</button>
+                        <button class="action-button action-download">Download</button>
+                        <button class="action-button action-delete">Delete</button>
+                    </div>
+                </div>
+                
+                <div class="run-item">
+                    <div class="run-header">
+                        <h3 class="run-title">High Growth Strategy Analysis</h3>
+                        <span class="run-status status-completed">Completed</span>
+                    </div>
+                    <div class="run-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Date Range:</span>
+                            <span class="detail-value">2024-01-01 to 2024-06-30</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Duration:</span>
+                            <span class="detail-value">6m 18s</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Completed:</span>
+                            <span class="detail-value">Dec 18, 2024, 9:45 AM</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Return:</span>
+                            <span class="detail-value">+18.7%</span>
+                        </div>
+                    </div>
+                    <div class="run-actions">
+                        <button class="action-button action-view">View Results</button>
+                        <button class="action-button action-download">Download</button>
+                        <button class="action-button action-delete">Delete</button>
+                    </div>
+                </div>
+                
+                <div class="run-item">
+                    <div class="run-header">
+                        <h3 class="run-title">Market Volatility Stress Test</h3>
+                        <span class="run-status status-failed">Failed</span>
+                    </div>
+                    <div class="run-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Date Range:</span>
+                            <span class="detail-value">2024-03-01 to 2024-09-30</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Duration:</span>
+                            <span class="detail-value">1m 23s</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Failed:</span>
+                            <span class="detail-value">Dec 15, 2024, 3:22 PM</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Error:</span>
+                            <span class="detail-value">Data timeout</span>
+                        </div>
+                    </div>
+                    <div class="run-actions">
+                        <button class="action-button action-view">View Logs</button>
+                        <button class="action-button action-delete">Delete</button>
+                    </div>
+                </div>
+                
+                <div class="run-item">
+                    <div class="run-header">
+                        <h3 class="run-title">Balanced Portfolio Baseline</h3>
+                        <span class="run-status status-completed">Completed</span>
+                    </div>
+                    <div class="run-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Date Range:</span>
+                            <span class="detail-value">2023-01-01 to 2023-12-31</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Duration:</span>
+                            <span class="detail-value">3m 45s</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Completed:</span>
+                            <span class="detail-value">Dec 10, 2024, 11:15 AM</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Return:</span>
+                            <span class="detail-value">+8.9%</span>
+                        </div>
+                    </div>
+                    <div class="run-actions">
+                        <button class="action-button action-view">View Results</button>
+                        <button class="action-button action-download">Download</button>
+                        <button class="action-button action-delete">Delete</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+
+    <script>
+        // Simple tab switching functionality
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                // Add active class to clicked button
+                button.classList.add('active');
+                
+                // Hide all tab contents
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+                // Show the selected tab content
+                const tabId = button.dataset.tab + '-tab';
+                document.getElementById(tabId).classList.remove('hidden');
+            });
+        });
+    </script>
 </body>
 </html>
