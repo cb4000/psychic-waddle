@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assembly Line Flow Simulator - Phoenix Project Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .assembly-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .station {
+            flex: 1;
+            margin: 0 10px;
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 20px;
+            border: 3px solid #e2e8f0;
+            position: relative;
+        }
+
+        .station.bottleneck {
+            border-color: #f56565;
+            background: #fff5f5;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245, 101, 101, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(245, 101, 101, 0); }
+        }
+
+        .station-header {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .station-controls {
+            margin: 10px 0;
+        }
+
+        .station-controls label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .station-controls input {
+            width: 100%;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e0;
+        }
+
+        .queue {
+            min-height: 60px;
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            border: 2px dashed #cbd5e0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .work-item {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            animation: fadeIn 0.3s;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .theme-switch {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .theme-btn {
+            padding: 10px 20px;
+            margin: 0 10px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .theme-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .arrow {
+            font-size: 2em;
+            color: #cbd5e0;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .metrics {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .metrics h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .bottleneck-alert {
+            background: #fff5f5;
+            border: 2px solid #f56565;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #742a2a;
+        }
+
+        .bottleneck-alert h3 {
+            color: #f56565;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏭 Assembly Line Flow Simulator</h1>
+        <p class="subtitle">Demonstrating Theory of Constraints & Flow Optimization from The Phoenix Project</p>
+        
+        <div class="theme-switch">
+            <button class="theme-btn active" onclick="switchTheme('factory')">🏭 Factory Mode</button>
+            <button class="theme-btn" onclick="switchTheme('software')">💻 Software Delivery</button>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="startSimulation()">▶️ Start Production</button>
+            <button class="btn btn-danger" onclick="stopSimulation()">⏸️ Pause</button>
+            <button class="btn btn-primary" onclick="resetSimulation()">🔄 Reset</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">Items Completed</div>
+                <div class="stat-value" id="completed">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Throughput/min</div>
+                <div class="stat-value" id="throughput">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total WIP</div>
+                <div class="stat-value" id="totalWip">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Lead Time (avg)</div>
+                <div class="stat-value" id="leadTime">0s</div>
+            </div>
+        </div>
+
+        <div id="bottleneckAlert" style="display: none;" class="bottleneck-alert">
+            <h3>⚠️ Bottleneck Detected!</h3>
+            <p id="bottleneckText"></p>
+        </div>
+
+        <div class="assembly-line" id="assemblyLine">
+            <div class="station" id="station1">
+                <div class="station-header">✂️ Station 1: Cutting</div>
+                <div class="station-controls">
+                    <label>Capacity (items/sec): <span id="capacity1">1</span></label>
+                    <input type="range" min="0.5" max="3" step="0.5" value="1" onchange="updateCapacity(1, this.value)">
+                </div>
+                <div class="queue" id="queue1"></div>
+            </div>
+            
+            <div class="station" id="station2">
+                <div class="station-header">🔧 Station 2: Assembly</div>
+                <div class="station-controls">
+                    <label>Capacity (items/sec): <span id="capacity2">0.7</span></label>
+                    <input type="range" min="0.5" max="3" step="0.5" value="0.7" onchange="updateCapacity(2, this.value)">
+                </div>
+                <div class="queue" id="queue2"></div>
+            </div>
+            
+            <div class="station" id="station3">
+                <div class="station-header">🎨 Station 3: Painting</div>
+                <div class="station-controls">
+                    <label>Capacity (items/sec): <span id="capacity3">1.2</span></label>
+                    <input type="range" min="0.5" max="3" step="0.5" value="1.2" onchange="updateCapacity(3, this.value)">
+                </div>
+                <div class="queue" id="queue3"></div>
+            </div>
+            
+            <div class="station" id="station4">
+                <div class="station-header">📦 Station 4: Packaging</div>
+                <div class="station-controls">
+                    <label>Capacity (items/sec): <span id="capacity4">1.5</span></label>
+                    <input type="range" min="0.5" max="3" step="0.5" value="1.5" onchange="updateCapacity(4, this.value)">
+                </div>
+                <div class="queue" id="queue4"></div>
+            </div>
+        </div>
+
+        <div class="metrics">
+            <h3>📊 Station Metrics</h3>
+            <div id="stationMetrics"></div>
+        </div>
+    </div>
+
+    <script>
+        const themes = {
+            factory: {
+                stations: [
+                    { name: 'Station 1: Cutting', emoji: '✂️' },
+                    { name: 'Station 2: Assembly', emoji: '🔧' },
+                    { name: 'Station 3: Painting', emoji: '🎨' },
+                    { name: 'Station 4: Packaging', emoji: '📦' }
+                ]
+            },
+            software: {
+                stations: [
+                    { name: 'Station 1: Design', emoji: '📐' },
+                    { name: 'Station 2: Development', emoji: '💻' },
+                    { name: 'Station 3: Testing', emoji: '🧪' },
+                    { name: 'Station 4: Deployment', emoji: '🚀' }
+                ]
+            }
+        };
+
+        let currentTheme = 'factory';
+        const colors = ['#667eea', '#f56565', '#48bb78', '#ed8936', '#9f7aea', '#38b2ac', '#ed64a6', '#ecc94b'];
+
+        const stations = [
+            { id: 1, capacity: 1, queue: [], processing: 0, totalProcessed: 0 },
+            { id: 2, capacity: 0.7, queue: [], processing: 0, totalProcessed: 0 },
+            { id: 3, capacity: 1.2, queue: [], processing: 0, totalProcessed: 0 },
+            { id: 4, capacity: 1.5, queue: [], processing: 0, totalProcessed: 0 }
+        ];
+
+        let running = false;
+        let itemCounter = 0;
+        let completedItems = 0;
+        let startTime = Date.now();
+        let itemStartTimes = {};
+        let itemColors = {};
+        let leadTimes = [];
+        let previousQueueStates = ['', '', '', ''];
+
+        function switchTheme(theme) {
+            currentTheme = theme;
+            
+            // Update button states
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update station names
+            themes[theme].stations.forEach((stationData, index) => {
+                document.querySelector(`#station${index + 1} .station-header`).textContent = 
+                    `${stationData.emoji} ${stationData.name}`;
+            });
+        }
+
+        function getItemColor(itemId) {
+            if (!itemColors[itemId]) {
+                itemColors[itemId] = colors[Math.floor(Math.random() * colors.length)];
+            }
+            return itemColors[itemId];
+        }
+
+        function updateCapacity(stationId, value) {
+            stations[stationId - 1].capacity = parseFloat(value);
+            document.getElementById(`capacity${stationId}`).textContent = value;
+            identifyBottleneck();
+        }
+
+        function startSimulation() {
+            if (!running) {
+                running = true;
+                startTime = Date.now();
+                simulate();
+            }
+        }
+
+        function stopSimulation() {
+            running = false;
+        }
+
+        function resetSimulation() {
+            running = false;
+            itemCounter = 0;
+            completedItems = 0;
+            leadTimes = [];
+            itemStartTimes = {};
+            itemColors = {};
+            previousQueueStates = ['', '', '', ''];
+            stations.forEach(station => {
+                station.queue = [];
+                station.processing = 0;
+                station.totalProcessed = 0;
+            });
+            updateDisplay();
+        }
+
+        function simulate() {
+            if (!running) return;
+
+            // Add new work item to first station
+            if (Math.random() < stations[0].capacity * 0.1) {
+                itemCounter++;
+                itemStartTimes[itemCounter] = Date.now();
+                stations[0].queue.push(itemCounter);
+            }
+
+            // Process each station
+            stations.forEach((station, index) => {
+                // Process current item
+                if (station.processing > 0) {
+                    station.processing -= station.capacity * 0.1;
+                    if (station.processing <= 0) {
+                        const item = station.queue.shift();
+                        station.processing = 0;
+                        station.totalProcessed++;
+                        
+                        // Move to next station or complete
+                        if (index < stations.length - 1) {
+                            stations[index + 1].queue.push(item);
+                        } else {
+                            completedItems++;
+                            const leadTime = (Date.now() - itemStartTimes[item]) / 1000;
+                            leadTimes.push(leadTime);
+                            delete itemStartTimes[item];
+                            delete itemColors[item];
+                        }
+                    }
+                }
+
+                // Start processing next item
+                if (station.processing === 0 && station.queue.length > 0) {
+                    station.processing = 1;
+                }
+            });
+
+            identifyBottleneck();
+            updateDisplay();
+            setTimeout(simulate, 100);
+        }
+
+        function identifyBottleneck() {
+            let maxQueue = 0;
+            let bottleneckIndex = -1;
+
+            stations.forEach((station, index) => {
+                const queueSize = station.queue.length;
+                if (queueSize > maxQueue) {
+                    maxQueue = queueSize;
+                    bottleneckIndex = index;
+                }
+            });
+
+            // Update UI
+            stations.forEach((station, index) => {
+                const element = document.getElementById(`station${index + 1}`);
+                if (index === bottleneckIndex && maxQueue > 3) {
+                    element.classList.add('bottleneck');
+                } else {
+                    element.classList.remove('bottleneck');
+                }
+            });
+
+            // Show bottleneck alert
+            const alert = document.getElementById('bottleneckAlert');
+            if (bottleneckIndex !== -1 && maxQueue > 3) {
+                alert.style.display = 'block';
+                document.getElementById('bottleneckText').textContent = 
+                    `Station ${bottleneckIndex + 1} has ${maxQueue} items waiting. Consider increasing its capacity to improve flow!`;
+            } else {
+                alert.style.display = 'none';
+            }
+        }
+
+        function updateDisplay() {
+            // Update queues only if they changed
+            stations.forEach((station, index) => {
+                const queueElement = document.getElementById(`queue${index + 1}`);
+                const newQueueState = station.queue.join(',');
+                
+                // Only update DOM if queue changed
+                if (previousQueueStates[index] !== newQueueState) {
+                    queueElement.innerHTML = station.queue.map(itemId => 
+                        `<div class="work-item" style="background-color: ${getItemColor(itemId)}"></div>`
+                    ).join('');
+                    previousQueueStates[index] = newQueueState;
+                }
+            });
+
+            // Update stats
+            document.getElementById('completed').textContent = completedItems;
+            
+            const elapsedMinutes = (Date.now() - startTime) / 60000;
+            const throughput = elapsedMinutes > 0 ? (completedItems / elapsedMinutes).toFixed(1) : 0;
+            document.getElementById('throughput').textContent = throughput;
+            
+            const totalWip = stations.reduce((sum, station) => sum + station.queue.length, 0);
+            document.getElementById('totalWip').textContent = totalWip;
+            
+            const avgLeadTime = leadTimes.length > 0 
+                ? (leadTimes.reduce((a, b) => a + b, 0) / leadTimes.length).toFixed(1) 
+                : 0;
+            document.getElementById('leadTime').textContent = avgLeadTime + 's';
+
+            // Update station metrics
+            const metricsHtml = stations.map((station, index) => `
+                <div class="metric-row">
+                    <span>Station ${index + 1}</span>
+                    <span>Queue: ${station.queue.length} | Processed: ${station.totalProcessed}</span>
+                </div>
+            `).join('');
+            document.getElementById('stationMetrics').innerHTML = metricsHtml;
+        }
+
+        // Initialize display
+        updateDisplay();
+    </script>
+</body>
+</html>
